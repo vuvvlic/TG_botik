@@ -1,6 +1,6 @@
 import logging
 import sqlite3
-
+from translate import Translator
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
@@ -14,10 +14,15 @@ reply_keyboard = [['/interpreter', '/collection_of_formulas'],
                   ['/tests', '/task_list']]
 markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False)
 reply_keyboard1 = [['/phis', '/math'],
-                   ['/stop_formuls']]
+                   ['/stop']]
 markup_formul = ReplyKeyboardMarkup(reply_keyboard1, one_time_keyboard=False)
+reply_keyboard2 = [['/eng', '/rus'],
+                   ['/stop']]
+markup_inter = ReplyKeyboardMarkup(reply_keyboard2, one_time_keyboard=False)
 
 school_object = False
+eng = False
+rus = False
 
 
 async def start(update, context):
@@ -35,6 +40,11 @@ async def start(update, context):
     con.close()
 
 
+async def interpreter(update, context):
+    global markup_inter
+    await update.message.reply_text('Выбери язык', reply_markup=markup_inter)
+
+
 async def collection_of_formulas(update, context):
     global markup_formul
     await update.message.reply_text('Выбери предмет', reply_markup=markup_formul)
@@ -50,19 +60,38 @@ async def math__(update, context):
     school_object = True
 
 
+async def eng_(update, context):
+    global eng, rus
+    eng, rus = True, False
+
+
+async def rus_(update, context):
+    global eng, rus
+    eng, rus = False, True
+
+
 async def stop_formuls(update, context):
     global markup
-    global school_object
+    global school_object, eng, rus
     school_object = False
+    eng, rus = False, False
     await update.message.reply_text('OK',
                                     reply_markup=markup
                                     )
 
 
 async def echo_formul(update, context):
-    global school_object
+    global school_object, rus, eng
     if school_object:
         await update.message.reply_text(f"формула")
+    if eng:
+        translator = Translator(from_lang="russian", to_lang="English")
+        text = translator.translate(update.message.text)
+        await update.message.reply_text(f"{text}")
+    if rus:
+        translator = Translator(from_lang="English", to_lang="russian")
+        text = translator.translate(update.message.text)
+        await update.message.reply_text(f"{text}")
 
 
 def main():
@@ -71,7 +100,10 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("phis", phis))
     application.add_handler(CommandHandler("math", math__))
-    application.add_handler(CommandHandler("stop_formuls", stop_formuls))
+    application.add_handler(CommandHandler("stop", stop_formuls))
+    application.add_handler(CommandHandler("eng", eng_))
+    application.add_handler(CommandHandler("rus", rus_))
+    application.add_handler(CommandHandler("interpreter", interpreter))
     application.add_handler(CommandHandler("collection_of_formulas", collection_of_formulas))
     application.add_handler(text_formul)
     application.run_polling()
@@ -79,3 +111,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+# interpreter
