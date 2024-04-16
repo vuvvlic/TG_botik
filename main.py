@@ -2,7 +2,7 @@ import logging
 import sqlite3
 from translate import Translator
 from telegram import ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from telegram.ext import Application, CommandHandler
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG
@@ -20,6 +20,11 @@ reply_keyboard2 = [['/eng', '/rus'],
                    ['/stop']]
 markup_inter = ReplyKeyboardMarkup(reply_keyboard2, one_time_keyboard=False)
 
+
+reply_phis = [['/kinematics'], ['/dynamics'], ['/hydrostatics'], ['/impulse'], ['/energy'],
+              ['/molecular'], ['/thermodynamics'], ['/amperage'], ['/magnetism'], ['/fluctuations'], ['/optics'],
+              ['/phis_back']]
+markup_phis = ReplyKeyboardMarkup(reply_phis, one_time_keyboard=False)
 school_object = False
 eng = False
 rus = False
@@ -53,6 +58,7 @@ async def collection_of_formulas(update, context):
 async def phis(update, context):
     global school_object
     school_object = True
+    await update.message.reply_text('Выбери раздел', reply_markup=markup_phis)
 
 
 async def math__(update, context):
@@ -80,32 +86,79 @@ async def stop_formuls(update, context):
                                     )
 
 
-async def echo_formul(update, context):
-    global school_object, rus, eng
-    if school_object:
-        await update.message.reply_text(f"формула")
-    if eng:
-        translator = Translator(from_lang="russian", to_lang="English")
-        text = translator.translate(update.message.text)
-        await update.message.reply_text(f"{text}")
-    if rus:
-        translator = Translator(from_lang="English", to_lang="russian")
-        text = translator.translate(update.message.text)
-        await update.message.reply_text(f"{text}")
+async def phis_back(update, context):
+    await update.message.reply_text('ОК',
+                                    reply_markup=markup_formul
+                                    )
+
+
+async def kinematics(update, context):
+    await update.message.reply_photo('data/kinematics.png')
+
+
+async def dynamics(update, context):
+    await update.message.reply_photo('data/dynamics.png')
+
+
+async def hydrostatics(update, context):
+    await update.message.reply_photo('data/hydrostatics.png')
+
+
+async def impulse(update, context):
+    await update.message.reply_photo('data/impulse.png')
+
+
+async def energy(update, context):
+    await update.message.reply_photo('data/energy.png')
+
+
+async def molecular(update, context):
+    await update.message.reply_photo('data/molecular.png')
+
+
+async def thermodynamics(update, context):
+    await update.message.reply_photo('data/thermodynamics.png')
+
+
+async def amperage(update, context):
+    await update.message.reply_photo('data/amperage.png')
+
+
+async def magnetism(update, context):
+    await update.message.reply_photo('data/magnetism.png')
+
+
+async def fluctuations(update, context):
+    await update.message.reply_photo('data/fluctuations.png')
+
+
+async def optics(update, context):
+    await update.message.reply_photo('data/optics.png')
 
 
 def main():
-    application = Application.builder().token('6634204145:AAHZhQ_XCdTct4Gir-BqP0P1XSaEyw8Ytgs').build()
-    text_formul = MessageHandler(filters.TEXT, echo_formul)
+    TOKEN = '6634204145:AAHZhQ_XCdTct4Gir-BqP0P1XSaEyw8Ytgs'
+    application = Application.builder().token(TOKEN).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("phis", phis))
     application.add_handler(CommandHandler("math", math__))
     application.add_handler(CommandHandler("stop", stop_formuls))
     application.add_handler(CommandHandler("eng", eng_))
     application.add_handler(CommandHandler("rus", rus_))
+    application.add_handler(CommandHandler('kinematics', kinematics))
+    application.add_handler(CommandHandler('dynamics', dynamics))
+    application.add_handler(CommandHandler('hydrostatics', hydrostatics))
+    application.add_handler(CommandHandler('impulse', impulse))
+    application.add_handler(CommandHandler('energy', energy))
+    application.add_handler(CommandHandler('molecular', molecular))
+    application.add_handler(CommandHandler('thermodynamics', thermodynamics))
+    application.add_handler(CommandHandler('amperage', amperage))
+    application.add_handler(CommandHandler('magnetism', magnetism))
+    application.add_handler(CommandHandler('fluctuations', fluctuations))
+    application.add_handler(CommandHandler('optics', optics))
+    application.add_handler(CommandHandler('phis_back', phis_back))
     application.add_handler(CommandHandler("interpreter", interpreter))
     application.add_handler(CommandHandler("collection_of_formulas", collection_of_formulas))
-    application.add_handler(text_formul)
     application.run_polling()
 
 
