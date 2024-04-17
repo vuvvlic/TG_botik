@@ -1,8 +1,9 @@
 import logging
 import sqlite3
-from translate import Translator
+
 from telegram import ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from translate import Translator
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG
@@ -19,7 +20,6 @@ markup_formul = ReplyKeyboardMarkup(reply_keyboard1, one_time_keyboard=False)
 reply_keyboard2 = [['/eng', '/rus'],
                    ['/stop']]
 markup_inter = ReplyKeyboardMarkup(reply_keyboard2, one_time_keyboard=False)
-
 
 reply_phis = [['/kinematics'], ['/dynamics'], ['/hydrostatics'], ['/impulse'], ['/energy'],
               ['/molecular'], ['/thermodynamics'], ['/amperage'], ['/magnetism'], ['/fluctuations'], ['/optics'],
@@ -136,8 +136,21 @@ async def optics(update, context):
     await update.message.reply_photo('data/optics.png')
 
 
+async def echo_formul(update, context):
+    global rus, eng
+    if eng:
+        translator = Translator(from_lang="russian", to_lang="English")
+        text = translator.translate(update.message.text)
+        await update.message.reply_text(f"{text}")
+    if rus:
+        translator = Translator(from_lang="English", to_lang="russian")
+        text = translator.translate(update.message.text)
+        await update.message.reply_text(f"{text}")
+
+
 def main():
     TOKEN = '6634204145:AAHZhQ_XCdTct4Gir-BqP0P1XSaEyw8Ytgs'
+    text_formul = MessageHandler(filters.TEXT, echo_formul)
     application = Application.builder().token(TOKEN).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("phis", phis))
@@ -159,6 +172,7 @@ def main():
     application.add_handler(CommandHandler('phis_back', phis_back))
     application.add_handler(CommandHandler("interpreter", interpreter))
     application.add_handler(CommandHandler("collection_of_formulas", collection_of_formulas))
+    application.add_handler(text_formul)
     application.run_polling()
 
 
