@@ -23,8 +23,11 @@ markup_inter = ReplyKeyboardMarkup(reply_keyboard2, one_time_keyboard=False)
 
 reply_phis = [['/kinematics'], ['/dynamics'], ['/hydrostatics'], ['/impulse'], ['/energy'],
               ['/molecular'], ['/thermodynamics'], ['/amperage'], ['/magnetism'], ['/fluctuations'], ['/optics'],
-              ['/phis_back']]
+              ['/back']]
 markup_phis = ReplyKeyboardMarkup(reply_phis, one_time_keyboard=False)
+
+reply_math = [['/multiplication'], ['/grade'], ['/logarithm'], ['/square'], ['/volume'], ['/back']]
+markup_math = ReplyKeyboardMarkup(reply_math, one_time_keyboard=False)
 school_object = False
 eng = False
 rus = False
@@ -64,6 +67,7 @@ async def phis(update, context):
 async def math__(update, context):
     global school_object
     school_object = True
+    await update.message.reply_text('Выбери тему', reply_markup=markup_math)
 
 
 async def eng_(update, context):
@@ -86,7 +90,7 @@ async def stop_formuls(update, context):
                                     )
 
 
-async def phis_back(update, context):
+async def back(update, context):
     await update.message.reply_text('ОК',
                                     reply_markup=markup_formul
                                     )
@@ -136,6 +140,26 @@ async def optics(update, context):
     await update.message.reply_photo('data/optics.png')
 
 
+async def multiplication(update, context):
+    await update.message.reply_photo('data/multiplication.png')
+
+
+async def grade(update, context):
+    await update.message.reply_photo('data/grade.png')
+
+
+async def logarithm(update, context):
+    await update.message.reply_photo('data/logarithm.png')
+
+
+async def square(update, context):
+    await update.message.reply_photo('data/square.png')
+
+
+async def volume(update, context):
+    await update.message.reply_photo('data/volume.png')
+
+
 async def echo_formul(update, context):
     global rus, eng
     if eng:
@@ -169,7 +193,12 @@ def main():
     application.add_handler(CommandHandler('magnetism', magnetism))
     application.add_handler(CommandHandler('fluctuations', fluctuations))
     application.add_handler(CommandHandler('optics', optics))
-    application.add_handler(CommandHandler('phis_back', phis_back))
+    application.add_handler(CommandHandler('multiplication', multiplication))
+    application.add_handler(CommandHandler('grade', grade))
+    application.add_handler(CommandHandler('logarithm', logarithm))
+    application.add_handler(CommandHandler('square', square))
+    application.add_handler(CommandHandler('volume', volume))
+    application.add_handler(CommandHandler('back', back))
     application.add_handler(CommandHandler("interpreter", interpreter))
     application.add_handler(CommandHandler("collection_of_formulas", collection_of_formulas))
     application.add_handler(text_formul)
