@@ -1,8 +1,9 @@
+import datetime as dt
 import logging
 import sqlite3
 
 from telegram import ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 from translate import Translator
 
 logging.basicConfig(
@@ -28,9 +29,14 @@ markup_phis = ReplyKeyboardMarkup(reply_phis, one_time_keyboard=False)
 
 reply_math = [['/multiplication'], ['/grade'], ['/logarithm'], ['/square'], ['/volume'], ['/back']]
 markup_math = ReplyKeyboardMarkup(reply_math, one_time_keyboard=False)
+reply_task = [['/list_of_initial_tasks', '/recording_tasks'],
+              ['/stop']]
+markup_task = ReplyKeyboardMarkup(reply_task, one_time_keyboard=False)
 school_object = False
 eng = False
 rus = False
+record_task = False
+namee, id_ishod = None, None
 
 
 async def start(update, context):
@@ -82,9 +88,10 @@ async def rus_(update, context):
 
 async def stop_formuls(update, context):
     global markup
-    global school_object, eng, rus
+    global school_object, eng, rus, record_task
     school_object = False
     eng, rus = False, False
+    record_task = False
     await update.message.reply_text('OK',
                                     reply_markup=markup
                                     )
@@ -170,6 +177,39 @@ async def echo_formul(update, context):
         translator = Translator(from_lang="English", to_lang="russian")
         text = translator.translate(update.message.text)
         await update.message.reply_text(f"{text}")
+    if record_task:
+        user_id = update.message.from_user.id
+        text = update.message.text.split(' - ')
+
+        con = sqlite3.connect('baza_tg_bot')
+        if__ = f"""INSERT INTO tasks VALUES({user_id}, "{text[0]}", "{text[1]}")"""
+        cur = con.cursor()
+        cur.execute(if__)
+        con.commit()
+        con.close()
+
+
+async def task_list(update, context):
+    await update.message.reply_text('Если хотите добавить свою задачу. Шаблон:\nзаметка - часы:мин',
+                                    reply_markup=markup_task)
+
+
+async def recording_tasks(update, context):
+    global record_task
+    record_task = True
+    await update.message.reply_text('Записываете')
+
+
+async def plan(update, context):
+    global id_ishod, namee
+    user_id = update.message.from_user.id
+    if user_id == id_ishod:
+        await update.message.reply_text(namee)
+    namee = None
+    id_ishod = None
+
+
+
 
 
 def main():
@@ -189,16 +229,19 @@ def main():
     application.add_handler(CommandHandler('energy', energy))
     application.add_handler(CommandHandler('molecular', molecular))
     application.add_handler(CommandHandler('thermodynamics', thermodynamics))
+    application.add_handler(CommandHandler('recording_tasks', recording_tasks))
     application.add_handler(CommandHandler('amperage', amperage))
     application.add_handler(CommandHandler('magnetism', magnetism))
     application.add_handler(CommandHandler('fluctuations', fluctuations))
     application.add_handler(CommandHandler('optics', optics))
     application.add_handler(CommandHandler('multiplication', multiplication))
     application.add_handler(CommandHandler('grade', grade))
+    application.add_handler(CommandHandler('plan', plan))
     application.add_handler(CommandHandler('logarithm', logarithm))
     application.add_handler(CommandHandler('square', square))
     application.add_handler(CommandHandler('volume', volume))
     application.add_handler(CommandHandler('back', back))
+    application.add_handler(CommandHandler('task_list', task_list))
     application.add_handler(CommandHandler("interpreter", interpreter))
     application.add_handler(CommandHandler("collection_of_formulas", collection_of_formulas))
     application.add_handler(text_formul)
