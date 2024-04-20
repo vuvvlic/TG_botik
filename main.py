@@ -1,9 +1,8 @@
-import datetime as dt
 import logging
 import sqlite3
 
 from telegram import ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from translate import Translator
 
 logging.basicConfig(
@@ -36,7 +35,7 @@ school_object = False
 eng = False
 rus = False
 record_task = False
-namee, id_ishod = None, None
+checking_for_deletion_tasks = False
 
 
 async def start(update, context):
@@ -87,11 +86,12 @@ async def rus_(update, context):
 
 
 async def stop_formuls(update, context):
-    global markup
+    global markup, checking_for_deletion_tasks
     global school_object, eng, rus, record_task
     school_object = False
     eng, rus = False, False
     record_task = False
+    checking_for_deletion_tasks = False
     await update.message.reply_text('OK',
                                     reply_markup=markup
                                     )
@@ -200,15 +200,23 @@ async def recording_tasks(update, context):
     await update.message.reply_text('Записываете')
 
 
-async def plan(update, context):
-    global id_ishod, namee
+async def list_of_initial_tasks(update, context):
+    global checking_for_deletion_tasks
     user_id = update.message.from_user.id
-    if user_id == id_ishod:
-        await update.message.reply_text(namee)
-    namee = None
-    id_ishod = None
-
-
+    iff = """SELECT * FROM tasks"""
+    con = sqlite3.connect('baza_tg_bot')
+    cur = con.cursor()
+    result = cur.execute(iff).fetchall()
+    text__ = []
+    con.close()
+    count = 0
+    for i in result:
+        if i[0] == user_id:
+            count += 1
+            text__.append(f"{count}: {i[1]} - {i[2]}")
+    t = '\n'.join(text__)
+    await update.message.reply_text(t)
+    checking_for_deletion_tasks = True
 
 
 
@@ -236,7 +244,7 @@ def main():
     application.add_handler(CommandHandler('optics', optics))
     application.add_handler(CommandHandler('multiplication', multiplication))
     application.add_handler(CommandHandler('grade', grade))
-    application.add_handler(CommandHandler('plan', plan))
+    application.add_handler(CommandHandler('list_of_initial_tasks', list_of_initial_tasks))
     application.add_handler(CommandHandler('logarithm', logarithm))
     application.add_handler(CommandHandler('square', square))
     application.add_handler(CommandHandler('volume', volume))
