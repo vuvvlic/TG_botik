@@ -35,7 +35,8 @@ school_object = False
 eng = False
 rus = False
 record_task = False
-checking_for_deletion_tasks = False
+checking_for_deletion_tasks = False  # проверка на запрос когда пользователь делает заметку
+checking_for_database_deletion = False  # проверка на запрос удаления из заметок
 
 
 async def start(update, context):
@@ -167,17 +168,17 @@ async def volume(update, context):
     await update.message.reply_photo('data/volume.png')
 
 
-async def echo_formul(update, context):
+async def echo_formul(update, context):  # ввод пользователя и идет проверка флажков
     global rus, eng
-    if eng:
+    if eng:  # вывод перовод с русского на английское
         translator = Translator(from_lang="russian", to_lang="English")
         text = translator.translate(update.message.text)
         await update.message.reply_text(f"{text}")
-    if rus:
+    if rus:  # вывод перовод с английского на русское
         translator = Translator(from_lang="English", to_lang="russian")
         text = translator.translate(update.message.text)
         await update.message.reply_text(f"{text}")
-    if record_task:
+    if record_task:  # ввод заметок
         user_id = update.message.from_user.id
         text = update.message.text.split(' - ')
 
@@ -187,6 +188,39 @@ async def echo_formul(update, context):
         cur.execute(if__)
         con.commit()
         con.close()
+    if checking_for_deletion_tasks:
+        text = update.message.text
+        user_id = update.message.from_user.id
+        con = sqlite3.connect('baza_tg_bot')
+        iff = """SELECT * FROM tasks"""
+        cur = con.cursor()
+        result = cur.execute(iff).fetchall()
+        con.close()
+        f = []
+        for i in result:
+            if i[0] == user_id:
+                f.append(i)
+        del_f = f[int(text) - 1]
+        iff = f"""DELETE from tasks
+        WHERE id == {del_f[0]} AND zadacha == '{del_f[1]}' AND time == '{del_f[2]}'"""
+        con = sqlite3.connect('baza_tg_bot')
+        cur = con.cursor()
+        cur.execute(iff)
+        con.commit()
+        con.close()
+        iff_ = """SELECT * FROM tasks"""
+        con = sqlite3.connect('baza_tg_bot')
+        cur = con.cursor()
+        result = cur.execute(iff_).fetchall()
+        text__ = []
+        con.close()
+        count = 0
+        for i in result:
+            if i[0] == user_id:
+                count += 1
+                text__.append(f"{count}: {i[1]} - {i[2]}")
+        t = '\n'.join(text__)
+        await update.message.reply_text(t)
 
 
 async def task_list(update, context):
@@ -194,14 +228,15 @@ async def task_list(update, context):
                                     reply_markup=markup_task)
 
 
-async def recording_tasks(update, context):
-    global record_task
+async def recording_tasks(update, context):  # при этой функции даем пользователю  написать заметку
+    global record_task, checking_for_deletion_tasks
     record_task = True
+    checking_for_deletion_tasks = False
     await update.message.reply_text('Записываете')
 
 
-async def list_of_initial_tasks(update, context):
-    global checking_for_deletion_tasks
+async def list_of_initial_tasks(update, context):  # при этой функции пароисходит список всех заметок
+    global checking_for_deletion_tasks, record_task
     user_id = update.message.from_user.id
     iff = """SELECT * FROM tasks"""
     con = sqlite3.connect('baza_tg_bot')
@@ -217,7 +252,8 @@ async def list_of_initial_tasks(update, context):
     t = '\n'.join(text__)
     await update.message.reply_text(t)
     checking_for_deletion_tasks = True
-
+    record_task = False
+    await update.message.reply_text('Для удаления выбирете цифру')
 
 
 def main():
