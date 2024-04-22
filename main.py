@@ -188,6 +188,7 @@ async def echo_formul(update, context):  # ввод пользователя и 
         cur.execute(if__)
         con.commit()
         con.close()
+        await update.message.reply_text(f"Записал")
     if checking_for_deletion_tasks:
         text = update.message.text
         user_id = update.message.from_user.id
@@ -220,6 +221,7 @@ async def echo_formul(update, context):  # ввод пользователя и 
                 count += 1
                 text__.append(f"{count}: {i[1]} - {i[2]}")
         t = '\n'.join(text__)
+        await update.message.reply_text(f"Удалил")
         await update.message.reply_text(t)
 
 
