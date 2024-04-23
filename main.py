@@ -181,14 +181,16 @@ async def echo_formul(update, context):  # ввод пользователя и 
     if record_task:  # ввод заметок
         user_id = update.message.from_user.id
         text = update.message.text.split(' - ')
-
-        con = sqlite3.connect('baza_tg_bot')
-        if__ = f"""INSERT INTO tasks VALUES({user_id}, "{text[0]}", "{text[1]}")"""
-        cur = con.cursor()
-        cur.execute(if__)
-        con.commit()
-        con.close()
-        await update.message.reply_text(f"Записал")
+        if len(text) == 2:
+            con = sqlite3.connect('baza_tg_bot')
+            if__ = f"""INSERT INTO tasks VALUES({user_id}, "{text[0]}", "{text[1]}")"""
+            cur = con.cursor()
+            cur.execute(if__)
+            con.commit()
+            con.close()
+            await update.message.reply_text(f"Записал")
+        else:
+            await update.message.reply_text('Строго по шаблону')
     if checking_for_deletion_tasks:
         text = update.message.text
         user_id = update.message.from_user.id
@@ -201,28 +203,35 @@ async def echo_formul(update, context):  # ввод пользователя и 
         for i in result:
             if i[0] == user_id:
                 f.append(i)
-        del_f = f[int(text) - 1]
-        iff = f"""DELETE from tasks
-        WHERE id == {del_f[0]} AND zadacha == '{del_f[1]}' AND time == '{del_f[2]}'"""
-        con = sqlite3.connect('baza_tg_bot')
-        cur = con.cursor()
-        cur.execute(iff)
-        con.commit()
-        con.close()
-        iff_ = """SELECT * FROM tasks"""
-        con = sqlite3.connect('baza_tg_bot')
-        cur = con.cursor()
-        result = cur.execute(iff_).fetchall()
-        text__ = []
-        con.close()
-        count = 0
-        for i in result:
-            if i[0] == user_id:
-                count += 1
-                text__.append(f"{count}: {i[1]} - {i[2]}")
-        t = '\n'.join(text__)
-        await update.message.reply_text(f"Удалил")
-        await update.message.reply_text(t)
+        if int(text) in range(1, len(f) + 1):
+
+            del_f = f[int(text) - 1]
+            iff = f"""DELETE from tasks
+            WHERE id == {del_f[0]} AND zadacha == '{del_f[1]}' AND time == '{del_f[2]}'"""
+            con = sqlite3.connect('baza_tg_bot')
+            cur = con.cursor()
+            cur.execute(iff)
+            con.commit()
+            con.close()
+            iff_ = """SELECT * FROM tasks"""
+            con = sqlite3.connect('baza_tg_bot')
+            cur = con.cursor()
+            result = cur.execute(iff_).fetchall()
+            text__ = []
+            con.close()
+            count = 0
+            for i in result:
+                if i[0] == user_id:
+                    count += 1
+                    text__.append(f"{count}: {i[1]} - {i[2]}")
+            t = '\n'.join(text__)
+            await update.message.reply_text(f"Удалил")
+            await update.message.reply_text(t)
+        else:
+            if len(f) == 0:
+                await update.message.reply_text('Заметки пустые')
+            else:
+                await update.message.reply_text('Это число не входит в диапозон')
 
 
 async def task_list(update, context):
