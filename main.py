@@ -351,6 +351,7 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("phis", phis))
     application.add_handler(CommandHandler("math", math__))
+    application.add_handler(CommandHandler("collection_of_formulas", collection_of_formulas))
     application.add_handler(CommandHandler("stop", stop_formuls))
     application.add_handler(CommandHandler("eng", eng_))
     application.add_handler(CommandHandler("rus", rus_))
@@ -376,7 +377,7 @@ def main():
     application.add_handler(CommandHandler('task_list', task_list))
     application.add_handler(CommandHandler('tests', tests))
     application.add_handler(CommandHandler("interpreter", interpreter))
-
+    application.add_handler(text_formul)
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('math_test', math_test)],
         states={
