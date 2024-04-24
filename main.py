@@ -1,8 +1,8 @@
 import logging
 import sqlite3
-
+from random import randint, choice, shuffle
 from telegram import ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from telegram.ext import (Application, CommandHandler, MessageHandler, filters, ConversationHandler)
 from translate import Translator
 
 logging.basicConfig(
@@ -11,11 +11,14 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+QUESTION, ANSWER = range(2)
 reply_keyboard = [['/interpreter', '/collection_of_formulas'],
                   ['/tests', '/task_list']]
 markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=False)
+reply_keyboard_tests = [['/math_test', '/history_test'], ['/stop']]
 reply_keyboard1 = [['/phis', '/math'],
                    ['/stop']]
+markup_tests = ReplyKeyboardMarkup(reply_keyboard_tests, one_time_keyboard=False)
 markup_formul = ReplyKeyboardMarkup(reply_keyboard1, one_time_keyboard=False)
 reply_keyboard2 = [['/eng', '/rus'],
                    ['/stop']]
@@ -56,24 +59,24 @@ async def start(update, context):
 
 async def interpreter(update, context):
     global markup_inter
-    await update.message.reply_text('Выбери язык', reply_markup=markup_inter)
+    await update.message.reply_text('Выберите язык', reply_markup=markup_inter)
 
 
 async def collection_of_formulas(update, context):
     global markup_formul
-    await update.message.reply_text('Выбери предмет', reply_markup=markup_formul)
+    await update.message.reply_text('Выберите предмет', reply_markup=markup_formul)
 
 
 async def phis(update, context):
     global school_object
     school_object = True
-    await update.message.reply_text('Выбери раздел', reply_markup=markup_phis)
+    await update.message.reply_text('Выберите раздел', reply_markup=markup_phis)
 
 
 async def math__(update, context):
     global school_object
     school_object = True
-    await update.message.reply_text('Выбери тему', reply_markup=markup_math)
+    await update.message.reply_text('Выберите тему', reply_markup=markup_math)
 
 
 async def eng_(update, context):
@@ -267,6 +270,80 @@ async def list_of_initial_tasks(update, context):  # при этой функц�
     await update.message.reply_text('Для удаления выбирете цифру')
 
 
+async def tests(update, context):
+    await update.message.reply_text('Выберите раздел', reply_markup=markup_tests)
+
+
+async def math_test(update, context):
+    global questions_math, count_сorrect_answers
+    count_сorrect_answers = 0
+    sign = ['+', '-', '*']
+    signs, signs2, signs3 = [[choice(sign), choice(sign)] for i in range(3)]
+    questions = [[randint(1, 20), randint(1, 20), randint(1, 20)] for _ in range(3)]
+    ex, ex2, ex3 = [f'{questions[i][0]} {signs[0]} {questions[i][1]} {signs[1]} {questions[i][2]}' for i in range(3)]
+    incorrect, incorrect2, incorrect3 = [[eval(f'{randint(1, 20)} {choice(sign)} {randint(1, 20)}'),
+                                          eval(f'{randint(1, 20)} {choice(sign)} {randint(1, 20)}')]
+                                         for _ in range(3)]
+    ans, ans2, ans3 = eval(ex), eval(ex2), eval(ex3)
+    variants, variants2, variants3 = incorrect + [ans], incorrect2 + [ans2], incorrect3 + [ans3]
+    shuffle(variants)
+    shuffle(variants2)
+    shuffle(variants3)
+    questions_math = {
+        1: {
+            "text": f'{ex} = ?',
+            "options": [str(i) for i in variants],
+            "answer": str(ans)
+        },
+        2: {
+            "text": f'{ex2} = ?',
+            "options": [str(i) for i in variants2],
+            "answer": str(ans2)
+        },
+        3: {
+            "text": f'{ex3} = ?',
+            "options": [str(i) for i in variants3],
+            "answer": str(ans3)
+        }
+    }
+    print(questions_math)
+    question_id = 1  # ID первого вопроса
+    reply_keyboard_q = [[option] for option in questions_math[question_id]["options"]]
+    await update.message.reply_text(questions_math[question_id]["text"],
+                              reply_markup=ReplyKeyboardMarkup(reply_keyboard_q, one_time_keyboard=True))
+    context.user_data['question_id'] = question_id  # Сохраняем текущий вопрос в user_data
+    return QUESTION
+
+
+async def handle_question(update, context):
+    global questions_math, count_сorrect_answers
+    user_answer = update.message.text
+    question_id = context.user_data['question_id']
+    correct_answer = questions_math[question_id]["answer"]
+
+    if user_answer == correct_answer:
+        count_сorrect_answers += 1
+        await update.message.reply_text("Верно! 🎉")
+    else:
+        await update.message.reply_text(f"Неверно 😔. Правильный ответ: {correct_answer}")
+
+    next_question_id = question_id + 1
+    if next_question_id in questions_math:
+        reply_keyboard_q = [[option] for option in questions_math[next_question_id]["options"]]
+        await update.message.reply_text(questions_math[next_question_id]["text"],
+                                  reply_markup=ReplyKeyboardMarkup(reply_keyboard_q, one_time_keyboard=True))
+        context.user_data['question_id'] = next_question_id
+        return QUESTION
+    else:
+        if count_сorrect_answers == 1:
+            await update.message.reply_text(f"Тест завершен! {count_сorrect_answers} правильный ответ!",
+                                            reply_markup=ReplyKeyboardMarkup(reply_keyboard_tests))
+        else:
+            await update.message.reply_text(f"Тест завершен! {count_сorrect_answers} правильных ответов!",
+                                            reply_markup=ReplyKeyboardMarkup(reply_keyboard_tests))
+        return ConversationHandler.END
+
+
 def main():
     TOKEN = '6634204145:AAHZhQ_XCdTct4Gir-BqP0P1XSaEyw8Ytgs'
     text_formul = MessageHandler(filters.TEXT, echo_formul)
@@ -297,9 +374,17 @@ def main():
     application.add_handler(CommandHandler('volume', volume))
     application.add_handler(CommandHandler('back', back))
     application.add_handler(CommandHandler('task_list', task_list))
+    application.add_handler(CommandHandler('tests', tests))
     application.add_handler(CommandHandler("interpreter", interpreter))
-    application.add_handler(CommandHandler("collection_of_formulas", collection_of_formulas))
-    application.add_handler(text_formul)
+
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('math_test', math_test)],
+        states={
+            QUESTION: [MessageHandler(filters.TEXT, handle_question)],
+        },
+        fallbacks=[CommandHandler('cancel', tests)]
+    )
+    application.add_handler(conv_handler)
     application.run_polling()
 
 
