@@ -184,7 +184,9 @@ async def echo_formul(update, context):  # ввод пользователя и 
     if record_task:  # ввод заметок
         user_id = update.message.from_user.id
         text = update.message.text.split(' - ')
+        print(text)
         if len(text) == 2:
+            print(123)
             con = sqlite3.connect('baza_tg_bot')
             if__ = f"""INSERT INTO tasks VALUES({user_id}, "{text[0]}", "{text[1]}")"""
             cur = con.cursor()
@@ -275,7 +277,8 @@ async def tests(update, context):
 
 
 async def math_test(update, context):
-    global questions_math, count_сorrect_answers
+    global questions_math, count_сorrect_answers, topic
+    topic = 'math'
     count_сorrect_answers = 0
     sign = ['+', '-', '*']
     signs, signs2, signs3 = [[choice(sign), choice(sign)] for i in range(3)]
@@ -306,7 +309,6 @@ async def math_test(update, context):
             "answer": str(ans3)
         }
     }
-    print(questions_math)
     question_id = 1  # ID первого вопроса
     reply_keyboard_q = [[option] for option in questions_math[question_id]["options"]]
     await update.message.reply_text(questions_math[question_id]["text"],
@@ -315,33 +317,113 @@ async def math_test(update, context):
     return QUESTION
 
 
+async def history_test(update, context):
+    global questions_history, count_сorrect_answers, topic
+    topic = 'history'
+    count_сorrect_answers = 0
+    ids = [1, 2, 3, 4, 5, 6, 7, 8]
+    shuffle(ids)
+    questions_history = {
+        ids[0]: {
+            "text": 'Куликовская битва состолась в...',
+            "options": ['1240 г.', '1380 г.', '1480 г.', '1613 г.'],
+            "answer": '1380 г.'
+        },
+        ids[1]: {
+            "text": 'Избрание на царство Михаила Фёдоровича Романова произошло в...',
+            "options": ['1613 г.', '1712 г.', '1480 г.', '1813 г.'],
+            "answer": '1613 г.'
+        },
+        ids[2]: {
+            "text": 'Великая Отечественная война началась...',
+            "options": ['9 мая 1945 г.', '22 июня 1941 г.', '22 июня 1943 г.', '9 мая 1941 г.'],
+            "answer": '22 июня 1941 г.'
+        },
+        ids[3]: {
+            "text": 'В каком году образовано СССР?',
+            "options": ['1917 г.', '1918 г.', '1919 г.', '1922 г.'],
+            "answer": '1922 г.'
+        },
+        ids[4]: {
+            "text": 'Пётр Первый умер в...',
+            "options": ['1682 г.', '1725 г.', '1721 г.', '1700 г.'],
+            "answer": '1725 г.'
+        },
+        ids[5]: {
+            "text": 'Год первого полёт Ю.А.Гагарина в космос',
+            "options": ['1957 г.', '1945 г.', '1961 г.', '1964 г.'],
+            "answer": '1961 г.'
+        },
+        ids[6]: {
+            "text": 'Бородинское сражение произошло в...',
+            "options": ['1812 г.', '1800 г.', '1801 г.', '1813 г.'],
+            "answer": '1812 г.'
+        },
+        ids[7]: {
+            "text": 'Сталин умер в...',
+            "options": ['1948 г.', '1950 г.', '1953 г.', '1955 г.'],
+            "answer": '1953 г.'
+        }
+
+
+    }
+    question_id = 1  # ID первого вопроса
+    reply_keyboard_q = [[option] for option in questions_history[question_id]["options"]]
+    await update.message.reply_text(questions_history[question_id]["text"],
+                              reply_markup=ReplyKeyboardMarkup(reply_keyboard_q, one_time_keyboard=True))
+    context.user_data['question_id'] = question_id  # Сохраняем текущий вопрос в user_data
+    return QUESTION
+
+
 async def handle_question(update, context):
-    global questions_math, count_сorrect_answers
+    global questions_math, questions_history, count_сorrect_answers, topic
     user_answer = update.message.text
     question_id = context.user_data['question_id']
-    correct_answer = questions_math[question_id]["answer"]
-
-    if user_answer == correct_answer:
-        count_сorrect_answers += 1
-        await update.message.reply_text("Верно! 🎉")
-    else:
-        await update.message.reply_text(f"Неверно 😔. Правильный ответ: {correct_answer}")
-
-    next_question_id = question_id + 1
-    if next_question_id in questions_math:
-        reply_keyboard_q = [[option] for option in questions_math[next_question_id]["options"]]
-        await update.message.reply_text(questions_math[next_question_id]["text"],
-                                  reply_markup=ReplyKeyboardMarkup(reply_keyboard_q, one_time_keyboard=True))
-        context.user_data['question_id'] = next_question_id
-        return QUESTION
-    else:
-        if count_сorrect_answers == 1:
-            await update.message.reply_text(f"Тест завершен! {count_сorrect_answers} правильный ответ!",
-                                            reply_markup=ReplyKeyboardMarkup(reply_keyboard_tests))
+    if topic == 'math':
+        correct_answer = questions_math[question_id]["answer"]
+        if user_answer == correct_answer:
+            count_сorrect_answers += 1
+            await update.message.reply_text("Верно! 🎉")
         else:
-            await update.message.reply_text(f"Тест завершен! {count_сorrect_answers} правильных ответов!",
-                                            reply_markup=ReplyKeyboardMarkup(reply_keyboard_tests))
-        return ConversationHandler.END
+            await update.message.reply_text(f"Неверно 😔. Правильный ответ: {correct_answer}")
+        next_question_id = question_id + 1
+        if next_question_id in questions_math:
+            reply_keyboard_q = [[option] for option in questions_math[next_question_id]["options"]]
+            await update.message.reply_text(questions_math[next_question_id]["text"],
+                                      reply_markup=ReplyKeyboardMarkup(reply_keyboard_q, one_time_keyboard=True))
+            context.user_data['question_id'] = next_question_id
+            return QUESTION
+        else:
+            if count_сorrect_answers == 1:
+                await update.message.reply_text(f"Тест завершен! {count_сorrect_answers} правильный ответ!",
+                                                reply_markup=ReplyKeyboardMarkup(reply_keyboard_tests))
+            else:
+                await update.message.reply_text(f"Тест завершен! {count_сorrect_answers} правильных ответов!",
+                                                reply_markup=ReplyKeyboardMarkup(reply_keyboard_tests))
+            return ConversationHandler.END
+    elif topic == 'history':
+        correct_answer = questions_history[question_id]["answer"]
+        if user_answer == correct_answer:
+            count_сorrect_answers += 1
+            await update.message.reply_text("Верно! 🎉")
+        else:
+            await update.message.reply_text(f"Неверно 😔. Правильный ответ: {correct_answer}")
+        next_question_id = question_id + 1
+        if next_question_id in questions_history:
+            reply_keyboard_q = [[option] for option in questions_history[next_question_id]["options"]]
+            await update.message.reply_text(questions_history[next_question_id]["text"],
+                                            reply_markup=ReplyKeyboardMarkup(reply_keyboard_q, one_time_keyboard=True))
+            context.user_data['question_id'] = next_question_id
+            return QUESTION
+        else:
+            if count_сorrect_answers == 1:
+                await update.message.reply_text(f"Тест завершен! {count_сorrect_answers} правильный ответ!",
+                                                reply_markup=ReplyKeyboardMarkup(reply_keyboard_tests))
+            else:
+                await update.message.reply_text(f"Тест завершен! {count_сorrect_answers} правильных ответов!",
+                                                reply_markup=ReplyKeyboardMarkup(reply_keyboard_tests))
+            return ConversationHandler.END
+
 
 
 def main():
@@ -377,7 +459,6 @@ def main():
     application.add_handler(CommandHandler('task_list', task_list))
     application.add_handler(CommandHandler('tests', tests))
     application.add_handler(CommandHandler("interpreter", interpreter))
-    application.add_handler(text_formul)
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('math_test', math_test)],
         states={
@@ -385,7 +466,16 @@ def main():
         },
         fallbacks=[CommandHandler('cancel', tests)]
     )
+    conv_handler2 = ConversationHandler(
+        entry_points=[CommandHandler('history_test', history_test)],
+        states={
+            QUESTION: [MessageHandler(filters.TEXT, handle_question)],
+        },
+        fallbacks=[CommandHandler('cancel', tests)]
+    )
     application.add_handler(conv_handler)
+    application.add_handler(conv_handler2)
+    application.add_handler(text_formul)
     application.run_polling()
 
 
